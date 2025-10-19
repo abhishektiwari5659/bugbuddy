@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A playful, developer-first platform where coders connect, pair up, and debug life (and code) together.",
   "main": "app.js",
+  "type": "module",
   "scripts": {
     "dev" : "nodemon src/app.js",
     "start": "node src/app.js",
