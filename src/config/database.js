@@ -1,7 +1,16 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
 
-const connection = async () =>{
-    await mongoose.connect("mongodb+srv://usingforailogin:zZaHcJrWdi3uR6uW@database.b7mwlo9.mongodb.net/bugbuddy")
-}
+dotenv.config();
+
+const connection = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("✅ MongoDB connected successfully!");
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error.message);
+    process.exit(1);
+  }
+};
 
 export default connection;
