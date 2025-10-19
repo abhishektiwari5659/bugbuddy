@@ -2,20 +2,40 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
     firstName: {
+        type: String,
+        required: true
+    },
+    lastName: {
         type: String
     },
-    lastName:{
-        type: String
+    emailId: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true
     },
-    emailId:{
-        type: String
+    age: {
+        type: Number,
+        min: 18
     },
-    age:{
-        type:Number
+    photoUrl: {
+        type: String,
+        default: ""
     },
-    gender:{
-        type: String
-    }
-})
+    gender: {
+        type: String,
+        validate(value){
+            if(!["male", "female", "others"].includes(value)) {
+                throw new Error("not a valid gender")
+            }
+        }
+    },
+    skills: {
+        type: [String]
+    },
+},
+    {
+        timestamps: true
+    })
 
 export default mongoose.model("User", userSchema);

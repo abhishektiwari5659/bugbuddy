@@ -10,11 +10,7 @@ app.get("/", (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-  const newUser = new User({
-    firstName: "Abhi",
-    lastName: "Tiwari",
-    age: 20
-  });
+  const newUser = new User(req.body);
 
   try {
     await newUser.save();
