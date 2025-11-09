@@ -4,7 +4,7 @@ import User from "../models/user.js";
 export const userAuth = async (req, res, next) => {
     const {token} = req.cookies;
     if(!token){
-        throw new Error("please login");
+        return res.status(401).send("please login")
     }
 
     const data = jwt.verify(token, "DevVerse!@#123");
