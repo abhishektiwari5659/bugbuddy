@@ -1,19 +1,19 @@
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 
 export const userAuth = async (req, res, next) => {
-    const {token} = req.cookies;
-    if(!token){
-        return res.status(401).send("please login")
-    }
+  try {
+    const { token } = req.cookies;
+    if (!token) return res.status(401).send("please login");
 
     const data = jwt.verify(token, "DevVerse!@#123");
-    const {_id} = data;
-    const user = await User.findById(_id);
-    if(!user){
-        throw new Error("USer not found")
-    }
+
+    const user = await User.findById(data._id);
+    if (!user) return res.status(401).send("User not found");
 
     req.user = user;
-    next()
-}
+    next();
+  } catch (err) {
+    return res.status(401).send("Invalid token, login again");
+  }
+};
