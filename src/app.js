@@ -7,7 +7,7 @@ import { authRouter } from "./routes/auth.js";
 import { profileRouter } from "./routes/profile.js";
 import { requestRouter } from "./routes/requests.js";
 import { userRouter } from "./routes/user.js";
-
+import aiRoutes from "./routes/aiRoutes.js";
 const app = express();
 
 // --------------------------
@@ -28,6 +28,7 @@ app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
+app.use("/ai", aiRoutes);
 
 // Start Server
 connection()
