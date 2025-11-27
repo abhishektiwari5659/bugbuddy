@@ -1,75 +1,96 @@
 import mongoose from "mongoose";
-import validator from "validator"
-import jwt from "jsonwebtoken"
-import bcrypt from "bcrypt"
+import validator from "validator";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
-const userSchema = new mongoose.Schema({
+const userSchema = new mongoose.Schema(
+  {
     firstName: {
-        type: String,
-        required: true
+      type: String,
+      required: true,
     },
     lastName: {
-        type: String
+      type: String,
     },
     emailId: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-        lowercase: true,
-        validate(value){
-            if(!validator.isEmail(value)){
-                throw new Error("invalid email address")
-            }
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+      validate(value) {
+        if (!validator.isEmail(value)) {
+          throw new Error("invalid email address");
         }
+      },
     },
-    password:{
-        type: String,
-        required: true,
-        validate(value){
-            if(!validator.isStrongPassword(value)){
-                throw new Error("not a strong password")
-            }
+    password: {
+      type: String,
+      required: true,
+      validate(value) {
+        if (!validator.isStrongPassword(value)) {
+          throw new Error("not a strong password");
         }
+      },
     },
     age: {
-        type: Number,
-        min: 18
+      type: Number,
+      min: 18,
     },
     photoUrl: {
-        type: String,
-        default: "https://img.pikbest.com/png-images/20241022/stealth-masked-hacker-gaming-logo-for-gamers_10991543.png!w700wp"
+      type: String,
+      default:
+        "https://img.pikbest.com/png-images/20241022/stealth-masked-hacker-gaming-logo-for-gamers_10991543.png!w700wp",
     },
-    about:{
-        type: String,
-        maxLength: 600
+    about: {
+      type: String,
+      maxLength: 600,
     },
     gender: {
-        type: String,
-        enum: {
-            values: ["male", "female", "other"],
-            message: `{VALUE} is not a valid gender`
-        }
+      type: String,
+      enum: {
+        values: ["male", "female", "other"],
+        message: `{VALUE} is not a valid gender`,
+      },
     },
     skills: {
-        type: [String],
-        maxLength: 10
+      type: [String],
+      maxLength: 10,
     },
-},
-    {
-        timestamps: true
-    })
 
-userSchema.methods.getJWT = async function(next){
-    const user = this;
-    const token = jwt.sign({_id : user._id}, "DevVerse!@#123", {expiresIn: "7d"});
-    return token;
-}
+    // --- PREMIUM FIELDS ---
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    membershipType: {
+      type: String,
+      enum: ["devlite", "devpro", "hypernova", null],
+      default: null,
+    },
+    membershipExpiry: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
-userSchema.methods.validatePassword = async function(passwordInput){
-    const user = this;
-    const passwordHash = user.password;
-    const isPasswordValid = await bcrypt.compare(passwordInput, passwordHash)
-    return isPasswordValid;
-}
+userSchema.methods.getJWT = async function (next) {
+  const user = this;
+  const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET || "DevVerse!@#123", {
+    expiresIn: "7d",
+  });
+  return token;
+};
+
+userSchema.methods.validatePassword = async function (passwordInput) {
+  const user = this;
+  const passwordHash = user.password;
+  const isPasswordValid = await bcrypt.compare(passwordInput, passwordHash);
+  return isPasswordValid;
+};
+
 export default mongoose.models.User || mongoose.model("User", userSchema);
