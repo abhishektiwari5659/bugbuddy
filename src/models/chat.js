@@ -19,12 +19,10 @@ const chatSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
             required: true
-        },
-        {
+        }],
             message: [messageSchema]
-        }
         
-    ]
-})
+},
+{timestamps: true})
 
-export default mongoose.Model("Chat", chatSchema)
+export default mongoose.model("Chat", chatSchema)

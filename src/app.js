@@ -12,6 +12,7 @@ import { userRouter } from "./routes/user.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import paymentRouter from "./routes/paymentRoutes.js";
 import initializeSocket from "./utils/socket.js";
+import chatRouter from "./routes/chat.js";
 
 dotenv.config()
 const app = express();
@@ -38,6 +39,7 @@ app.use("/", requestRouter);
 app.use("/", userRouter);
 app.use("/ai", aiRoutes);
 app.use("/", paymentRouter)
+app.use("/", chatRouter)
 
 
 // Start Server
