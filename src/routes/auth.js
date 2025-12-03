@@ -22,14 +22,12 @@ authRouter.post("/signup", async (req, res) => {
 
     await newUser.save();
 
-    // Create token AFTER signup
     const token = await newUser.getJWT();
 
-    // Store token in cookie
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false, // true in production with HTTPS
-      sameSite: "lax",
+      secure: true,        // IMPORTANT for production
+      sameSite: "none",    // REQUIRED for cross-site cookies
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -51,25 +49,24 @@ authRouter.post("/login", async (req, res) => {
 
     const token = await user.getJWT();
 
-    // Proper cookie settings
     res.cookie("token", token, {
       httpOnly: true,
-      secure: false,
-      sameSite: "lax",
+      secure: true,        // REQUIRED
+      sameSite: "none",    // REQUIRED
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.send(user);
   } catch (error) {
-    res.status(404).send("error: " + error.message);
+    res.status(401).send("error: " + error.message);
   }
 });
 
 authRouter.delete("/logout", async (req, res) => {
   res.cookie("token", null, {
     httpOnly: true,
-    secure: false,
-    sameSite: "lax",
+    secure: true,
+    sameSite: "none",
     expires: new Date(Date.now()),
   });
 
