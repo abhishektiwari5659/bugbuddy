@@ -17,7 +17,7 @@ export const userAuth = async (req, res, next) => {
     // expose both: mongoose doc for routes that need to save, and plain object for safe access
     req.userDoc = userDoc; // mongoose document (has .save())
     req.user = userDoc.toObject(); // plain object (safe to send to client)
-    next();
+    next(); 
   } catch (err) {
     return res.status(401).send("Invalid token, login again");
   }

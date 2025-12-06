@@ -2,25 +2,31 @@ import express from "express";
 import { userAuth } from "../middlewares/auth.js";
 import paymentInstance from "../utils/razorpay.js";
 import Payment from "../models/payments.js";
-import { membershipAmount } from "../utils/constant.js";
 import crypto from "crypto";
 
 const paymentRouter = express.Router();
 
-// create order
+/* =====================================================
+   CREATE ORDER — NOW SUPPORTS MONTHLY + YEARLY BILLING
+   ===================================================== */
 paymentRouter.post("/payment/create", userAuth, async (req, res) => {
   try {
     const membershipType = (req.body.membershipType || "").toLowerCase();
-    const { firstName, lastName, emailId } = req.user; // plain object
+    const billingMode = req.body.billingMode || "monthly"; // monthly | yearly
+    const selectedPrice = req.body.price; // sent from frontend
+
+    const { firstName, lastName, emailId } = req.user;
     const userId = req.userDoc._id;
 
-    const price = membershipAmount[membershipType];
-    if (!price) {
-      return res.status(400).json({ success: false, message: "Invalid membership type" });
+    // Price must come from frontend (monthly or yearlyTotal)
+    if (!selectedPrice || isNaN(selectedPrice)) {
+      return res.status(400).json({ success: false, message: "Invalid price selected" });
     }
 
-    const amount = price * 100;
+    // Razorpay works in paise → multiply by 100
+    const amount = Number(selectedPrice) * 100;
 
+    // Create Razorpay order
     const order = await paymentInstance.orders.create({
       amount,
       currency: "INR",
@@ -28,12 +34,15 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
       notes: {
         firstName,
         lastName,
-        membershipType,
         emailId,
+        membershipType,
+        billingMode,
+        selectedPrice,
       },
     });
 
-    const payment = new Payment({
+    // Save order in DB
+    const payment = await Payment.create({
       userId,
       orderId: order.id,
       paymentId: null,
@@ -44,19 +53,20 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
       email: emailId,
     });
 
-    const savedPayment = await payment.save();
-
-    res.json({
-      ...savedPayment.toJSON(),
+    return res.json({
+      ...payment.toJSON(),
       keyId: process.env.RAZORPAY_KEY_ID,
     });
+
   } catch (error) {
-    console.log(error);
+    console.log("payment/create error:", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
-// verify payment (called from frontend handler)
+/* =====================================================
+   VERIFY PAYMENT — NOW APPLIES CORRECT EXPIRY
+   ===================================================== */
 paymentRouter.post("/payment/verify", userAuth, async (req, res) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -65,8 +75,8 @@ paymentRouter.post("/payment/verify", userAuth, async (req, res) => {
       return res.status(400).json({ success: false, message: "Missing params" });
     }
 
+    // Validate signature
     const body = razorpay_order_id + "|" + razorpay_payment_id;
-
     const expectedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(body.toString())
@@ -76,6 +86,7 @@ paymentRouter.post("/payment/verify", userAuth, async (req, res) => {
       return res.status(400).json({ success: false, message: "Payment verification failed" });
     }
 
+    // Update payment record
     const payment = await Payment.findOneAndUpdate(
       { orderId: razorpay_order_id },
       {
@@ -90,18 +101,28 @@ paymentRouter.post("/payment/verify", userAuth, async (req, res) => {
     }
 
     const membershipType = (payment.notes?.membershipType || "devlite").toLowerCase();
+    const billingMode = payment.notes?.billingMode || "monthly";
 
-    // update user document (use req.userDoc which is mongoose doc)
+    // Update User Membership
     const userDoc = req.userDoc;
 
     userDoc.isPremium = true;
     userDoc.membershipType = membershipType;
-    // set expiry 30 days from now; change logic if monthly/yearly options later
-    userDoc.membershipExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    // Correct expiry logic based on billingMode
+    if (billingMode === "yearly") {
+      userDoc.membershipExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+    } else {
+      userDoc.membershipExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    }
 
     await userDoc.save();
 
-    return res.json({ success: true, message: "Payment verified and membership activated" });
+    return res.json({
+      success: true,
+      message: "Payment verified and membership activated",
+    });
+
   } catch (error) {
     console.log("verify error:", error);
     res.status(500).json({ success: false, message: "Server error" });
