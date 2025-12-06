@@ -17,7 +17,7 @@ const initializeSocket = (server) => {
 		cors: {
 			origin: [
 				"http://localhost:5173",
-				"https://dev-verse-mu.vercel.app"
+				"https://dev-verse-webapp.vercel.app"
 			],
 			credentials: true
 		},

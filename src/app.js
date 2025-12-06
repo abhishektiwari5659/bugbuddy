@@ -25,7 +25,7 @@ initializeSocket(server);
 // -----------------------------------
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://dev-verse-mu.vercel.app", 
+  "https://dev-verse-webapp.vercel.app", 
 ];
 
 app.use(
